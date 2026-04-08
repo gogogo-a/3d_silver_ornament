@@ -20,17 +20,16 @@
 </head>
 <body>
 
-    <!-- 全局预加载动画 -->
-    <div id="global-loading" class="active">
-        <div class="loader-spinner"></div>
-        <div class="progress-container">
-            <div id="progress-bar"></div>
-        </div>
-        <div id="loading-text">正在预加载超高清 3D 展厅资产 (0%)</div>
-    </div>
-
     <!-- 顶部轮播展区 -->
     <header class="hero-section">
+        <!-- 仅在这个画布区内部显示加载进度 -->
+        <div id="hero-loading-overlay">
+            <div class="loader-spinner"></div>
+            <div class="progress-container">
+                <div id="progress-bar"></div>
+            </div>
+            <div id="loading-text">正在从云端拉取高精度模型 (0%)</div>
+        </div>
         <div id="hero-canvas-container"></div>
         <div class="hero-content">
             <h1 class="hero-title">掌上明珠</h1>
@@ -47,7 +46,9 @@
         <div class="cards-grid">
             <!-- 戒指卡片 -->
             <div class="product-card" data-model="ring">
-                <div class="card-canvas" id="canvas-ring"></div>
+                <div class="card-canvas" id="canvas-ring">
+                    <div class="mini-loader"></div>
+                </div>
                 <div class="card-content">
                     <h3 class="card-title">非遗工艺 · 银饰戒指</h3>
                     <p class="card-desc">汲取传统“竹韵”元素与编织纹理，手工打磨，将非遗文化凝聚指尖，彰显现代审美的极简高雅。</p>
@@ -60,7 +61,9 @@
 
             <!-- 耳环卡片 -->
             <div class="product-card" data-model="earring">
-                <div class="card-canvas" id="canvas-earring"></div>
+                <div class="card-canvas" id="canvas-earring">
+                    <div class="mini-loader"></div>
+                </div>
                 <div class="card-content">
                     <h3 class="card-title">非遗工艺 · 银饰耳环</h3>
                     <p class="card-desc">轻盈灵动的设计，融合古典流苏与现代几何学，光影变幻之间，展现出传统银饰工艺的极致魅力。</p>
@@ -73,7 +76,9 @@
 
             <!-- 项链卡片 -->
             <div class="product-card" data-model="necklace">
-                <div class="card-canvas" id="canvas-necklace"></div>
+                <div class="card-canvas" id="canvas-necklace">
+                    <div class="mini-loader"></div>
+                </div>
                 <div class="card-content">
                     <h3 class="card-title">非遗工艺 · 银饰项链</h3>
                     <p class="card-desc">文化传承与现代审美的完美结合，国产淡水珍珠相缀，展现卓越品质与社会责任的艺术结晶。</p>

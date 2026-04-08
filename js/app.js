@@ -113,57 +113,55 @@ function preprocessFBXMaterials(object, scaleFactor = 100) {
 }
 
 function preloadAssets() {
+    // 网站初始化阶段彻底“秒开”，不再被上百兆的模型卡住
+    initHero(); // 初始化主场景和摄像机（模型位暂时空白）
+    startMainLoop(); // 启动循环
+    initInteractions(); // 开启卡片交互
+    
     const loader = new FBXLoader();
-    let loadedCount = 0;
-    const totalFiles = 4;
     const progText = document.getElementById('loading-text');
     const progBar = document.getElementById('progress-bar');
+    const heroOverlay = document.getElementById('hero-loading-overlay');
 
-    // 追踪每个文件的独立加载进度 (0 ~ 1)
-    const fileProgress = [0, 0, 0, 0];
-
-    function updateProgressUI() {
-        const totalProgress = fileProgress.reduce((sum, val) => sum + val, 0) / totalFiles;
-        const pct = Math.min(Math.round(totalProgress * 100), 100);
-        progText.innerText = `正在加载超高清 3D 资产 (${pct}%)`;
-        progBar.style.width = `${pct}%`;
-    }
-
-    function createProgressHandler(index) {
-        return function(xhr) {
-            if (xhr.lengthComputable) {
-                fileProgress[index] = xhr.loaded / xhr.total;
-                updateProgressUI();
-            }
-        };
-    }
-
-    function checkDone(index) {
-        fileProgress[index] = 1; // 确保完全加载后计入 100%
-        updateProgressUI();
-        loadedCount++;
+    // 1. 开始异步后台加载主位模型（50+ MB）
+    loader.load(MAIN_HERO_FBX, (obj) => { 
+        loadedModels.hero = preprocessFBXMaterials(obj, 150);
+        progText.innerText = `3D 模型就绪`;
+        progBar.style.width = `100%`;
         
-        if (loadedCount === totalFiles) {
-            setTimeout(() => {
-                document.getElementById('global-loading').classList.remove('active');
-                initAllScenes();
-            }, 800); // 给用户一点时间看满进度条
+        setTimeout(() => {
+            heroOverlay.style.opacity = '0'; // 淡去加载层
+            // 模型注入主场地
+            if (renderersMap['hero']) {
+                renderersMap['hero'].scene.add(loadedModels.hero.clone());
+            }
+            lazyLoadSubModels(); // 主模型加载完再加载副卡模型的后台队列
+        }, 800);
+    }, (xhr) => {
+        if (xhr.lengthComputable) {
+            const pct = Math.min(Math.round((xhr.loaded / xhr.total) * 100), 100);
+            progText.innerText = `正在下发高精度模型流 (${pct}%)`;
+            progBar.style.width = `${pct}%`;
         }
-    }
-
-    loader.load(MAIN_HERO_FBX, (obj) => { loadedModels.hero = preprocessFBXMaterials(obj, 150); checkDone(0); }, createProgressHandler(0), console.error);
-    loader.load(APP_DATA.ring.file, (obj) => { loadedModels.ring = preprocessFBXMaterials(obj, 100); checkDone(1); }, createProgressHandler(1), console.error);
-    loader.load(APP_DATA.earring.file, (obj) => { loadedModels.earring = preprocessFBXMaterials(obj, 100); checkDone(2); }, createProgressHandler(2), console.error);
-    loader.load(APP_DATA.necklace.file, (obj) => { loadedModels.necklace = preprocessFBXMaterials(obj, 100); checkDone(3); }, createProgressHandler(3), console.error);
+    }, console.error);
 }
 
-function initAllScenes() {
-    initHero();
-    initCardCanvas('ring');
-    initCardCanvas('earring');
-    initCardCanvas('necklace');
-    initInteractions();
-    startMainLoop();
+function lazyLoadSubModels() {
+    const loader = new FBXLoader();
+    
+    // 我们依次静默加载三个模型，一加载完立刻初始化其对于的卡片视区，增强无缝感
+    const configs = [
+        { key: 'ring', file: APP_DATA.ring.file, scale: 100 },
+        { key: 'earring', file: APP_DATA.earring.file, scale: 100 },
+        { key: 'necklace', file: APP_DATA.necklace.file, scale: 100 }
+    ];
+
+    configs.forEach(conf => {
+        loader.load(conf.file, (obj) => {
+            loadedModels[conf.key] = preprocessFBXMaterials(obj, conf.scale);
+            initCardCanvas(conf.key); // 此时自动替换掉骨架占位并渲染
+        }, undefined, console.error);
+    });
 }
 
 function initHero() {
@@ -196,10 +194,8 @@ function initHero() {
     // 手动更新一次以应用新的控制中心
     controls.update();
 
+    // 模型不再立刻装填，而是先搭建光影，等后台加载完成再塞进 Scene
     setupLighting(scene);
-    
-    // Clone model to prevent conflicts
-    scene.add(loadedModels.hero.clone());
 
     renderersMap['hero'] = { scene, camera, renderer, controls };
 
@@ -212,6 +208,7 @@ function initHero() {
 
 function initCardCanvas(key) {
     const container = document.getElementById(`canvas-${key}`);
+    container.innerHTML = ''; // 清除骨架旋转器
     const scene = new THREE.Scene();
     scene.background = null;
 
