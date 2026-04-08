@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>掌上明珠 - 创意非遗银饰设计与3D呈现</title>
+    <meta name="description" content="致力于融合非遗文化与现代首饰设计，运用3D技术展示首饰细节与质感">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Import maps polyfill for ES modules -->
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <!-- Configure import map for Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "js/three.module.js",
+                "three/addons/": "js/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <!-- 全局预加载动画 -->
+    <div id="global-loading" class="active">
+        <div class="loader-spinner"></div>
+        <div class="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+        <div id="loading-text">正在预加载超高清 3D 展厅资产 (0%)</div>
+    </div>
+
+    <!-- 顶部轮播展区 -->
+    <header class="hero-section">
+        <div id="hero-canvas-container"></div>
+        <div class="hero-content">
+            <h1 class="hero-title">掌上明珠</h1>
+            <p class="hero-subtitle">创意非遗银饰设计与3D呈现</p>
+        </div>
+    </header>
+
+    <!-- 系列展品概览 -->
+    <main class="products-section">
+        <div class="section-header">
+            <h2>探索系列作品</h2>
+        </div>
+        
+        <div class="cards-grid">
+            <!-- 戒指卡片 -->
+            <div class="product-card" data-model="ring">
+                <div class="card-canvas" id="canvas-ring"></div>
+                <div class="card-content">
+                    <h3 class="card-title">非遗工艺 · 银饰戒指</h3>
+                    <p class="card-desc">汲取传统“竹韵”元素与编织纹理，手工打磨，将非遗文化凝聚指尖，彰显现代审美的极简高雅。</p>
+                    <button class="btn-view">
+                        <span>3D 探索</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 耳环卡片 -->
+            <div class="product-card" data-model="earring">
+                <div class="card-canvas" id="canvas-earring"></div>
+                <div class="card-content">
+                    <h3 class="card-title">非遗工艺 · 银饰耳环</h3>
+                    <p class="card-desc">轻盈灵动的设计，融合古典流苏与现代几何学，光影变幻之间，展现出传统银饰工艺的极致魅力。</p>
+                    <button class="btn-view">
+                        <span>3D 探索</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 项链卡片 -->
+            <div class="product-card" data-model="necklace">
+                <div class="card-canvas" id="canvas-necklace"></div>
+                <div class="card-content">
+                    <h3 class="card-title">非遗工艺 · 银饰项链</h3>
+                    <p class="card-desc">文化传承与现代审美的完美结合，国产淡水珍珠相缀，展现卓越品质与社会责任的艺术结晶。</p>
+                    <button class="btn-view">
+                        <span>3D 探索</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 3D详情模态框 -->
+    <div class="modal-overlay" id="detail-modal">
+        <div class="modal-content">
+            <button class="modal-close" id="modal-close-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+            <div class="modal-viewer">
+                <div id="modal-canvas-container"></div>
+            </div>
+            <div class="modal-info">
+                <div class="modal-tag">Heritage Collection</div>
+                <h2 class="modal-title" id="modal-title">作品名称</h2>
+                <p class="modal-desc" id="modal-desc">详细介绍内容</p>
+                <div class="modal-hint">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                    <span>您可以支持全方位拖拽、缩放以查看商品细节</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入主逻辑脚本 -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
