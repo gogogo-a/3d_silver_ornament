@@ -11,7 +11,8 @@ const MIME = {
   ".css": "text/css; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
-  ".fbx": "application/octet-stream"
+  ".fbx": "application/octet-stream",
+  ".glb": "model/gltf-binary"
 };
 
 function sendFile(filePath, res) {
@@ -38,7 +39,7 @@ const server = http.createServer((req, res) => {
   let pathname = decodeURIComponent(parsed.pathname || "/");
 
   if (pathname === "/") {
-    pathname = "/html/index.html";
+    pathname = "/index.html";
   }
 
   const safePath = path.normalize(path.join(ROOT, pathname));
