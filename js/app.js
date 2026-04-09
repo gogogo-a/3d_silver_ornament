@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 const APP_DATA = {
     ring: {
@@ -24,6 +25,9 @@ const APP_DATA = {
 };
 
 const MAIN_HERO_GLB = '3d/真的完成材质1.glb';
+
+// Environment map for reflections
+let environmentMap = null;
 
 // Preloaded models cache
 const loadedModels = {
@@ -66,6 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupLighting(scene) {
+    // 设置环境贴图
+    if (environmentMap) {
+        scene.environment = environmentMap;
+    }
+
     // 调低灯光亮度，避免环境光和定向光导致模型过曝泛白，从而还原真实材质颜色
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
@@ -87,11 +96,18 @@ function setupLighting(scene) {
 function preprocessFBXMaterials(object, scaleFactor = 100) {
     object.traverse((child) => {
         if (child.isMesh) {
-            // 如果模型没有默认材质才添加占位，否则绝对不触碰内置原生材质和贴图颜色
+            // 如果模型没有默认材质才添加占位
             if (!child.material) {
                 child.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
             }
-            // 完全移除了强行更改 metalness 和 roughness 的代码，保留 FBX 原始材质特性
+            
+            // 根据要求：降低金属质感，让物体不至于太像黑底的镜子
+            if (child.material) {
+                // 原材料往往是1.0的金属度，将其改低，让他开始接受环境光漫反射
+                child.material.metalness = 0.5; 
+                child.material.roughness = 0.4;
+                child.material.needsUpdate = true;
+            }
         }
     });
 
@@ -117,6 +133,17 @@ function preloadAssets() {
     initHero(); // 初始化主场景和摄像机（模型位暂时空白）
     startMainLoop(); // 启动循环
     initInteractions(); // 开启卡片交互
+    
+    // 后台加载 HDRI 环境光贴图，用于金属反射
+    new RGBELoader().load('textures/studio.hdr', (texture) => {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        environmentMap = texture;
+        
+        // 赋予已初始化的场景
+        Object.values(renderersMap).forEach(({scene}) => {
+            if (scene) scene.environment = environmentMap;
+        });
+    });
     
     const loader = new GLTFLoader();
     const progText = document.getElementById('loading-text');
