@@ -1,29 +1,29 @@
 import * as THREE from 'three';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const APP_DATA = {
     ring: {
         id: 'ring',
-        file: '3d/戒指材质.fbx',
+        file: '3d/戒指材质.glb',
         title: '非遗工艺 · 银饰戒指',
         desc: '本款戒指在设计上汲取了非物质文化遗产中独特的“竹韵”元素与编织纹理。通过高精度的3D打印与传统手工打磨相结合，我们将非遗文化凝聚在您指尖，让每一次佩戴都成为一场现代审美与传统的跨时空对话。其光泽如同经过岁月洗礼，温润且高雅。'
     },
     earring: {
         id: 'earring',
-        file: '3d/耳环材质.fbx',
+        file: '3d/耳环材质1.glb',
         title: '非遗工艺 · 银饰耳环',
         desc: '轻盈灵动的设计语言，融合了古典金属丝编织与现代抽象几何学。我们在模型中最大程度地还原了银材质在高光下的细腻反射与折射质感。光影变幻之间，仿佛能够听到深厚文化底蕴在耳畔低语，充分展现出传统银饰工艺的极致魅力与当代女性的优雅。'
     },
     necklace: {
         id: 'necklace',
-        file: '3d/项链材质.fbx',
+        file: '3d/项链材质1.glb',
         title: '非遗工艺 · 银饰项链',
         desc: '作为本系列的重磅之作，这款项链堪称文化传承与现代审美的完美结合体。主链条采用独特的环扣技术连接，中央不仅彰显非遗老工匠的卓越技艺，并融入了国产淡水珍珠相缀的设计理念，在支持国产事业的同时履行企业社会责任。全景3D展示让每一处精细的雕花都清晰可见。'
     }
 };
 
-const MAIN_HERO_FBX = '3d/真的完成材质.fbx';
+const MAIN_HERO_GLB = '3d/真的完成材质1.glb';
 
 // Preloaded models cache
 const loadedModels = {
@@ -118,14 +118,14 @@ function preloadAssets() {
     startMainLoop(); // 启动循环
     initInteractions(); // 开启卡片交互
     
-    const loader = new FBXLoader();
+    const loader = new GLTFLoader();
     const progText = document.getElementById('loading-text');
     const progBar = document.getElementById('progress-bar');
     const heroOverlay = document.getElementById('hero-loading-overlay');
 
     // 1. 开始异步后台加载主位模型（50+ MB）
-    loader.load(MAIN_HERO_FBX, (obj) => { 
-        loadedModels.hero = preprocessFBXMaterials(obj, 150);
+    loader.load(MAIN_HERO_GLB, (gltf) => { 
+        loadedModels.hero = preprocessFBXMaterials(gltf.scene, 150);
         progText.innerText = `3D 模型就绪`;
         progBar.style.width = `100%`;
         
@@ -147,7 +147,7 @@ function preloadAssets() {
 }
 
 function lazyLoadSubModels() {
-    const loader = new FBXLoader();
+    const loader = new GLTFLoader();
     
     // 我们依次静默加载三个模型，一加载完立刻初始化其对于的卡片视区，增强无缝感
     const configs = [
@@ -157,8 +157,8 @@ function lazyLoadSubModels() {
     ];
 
     configs.forEach(conf => {
-        loader.load(conf.file, (obj) => {
-            loadedModels[conf.key] = preprocessFBXMaterials(obj, conf.scale);
+        loader.load(conf.file, (gltf) => {
+            loadedModels[conf.key] = preprocessFBXMaterials(gltf.scene, conf.scale);
             initCardCanvas(conf.key); // 此时自动替换掉骨架占位并渲染
         }, undefined, console.error);
     });
