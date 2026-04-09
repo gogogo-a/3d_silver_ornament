@@ -69,44 +69,75 @@ document.addEventListener('DOMContentLoaded', () => {
     preloadAssets();
 });
 
-function setupLighting(scene) {
+function setupLighting(scene, intensityScale = 1) {
     // 设置环境贴图
     if (environmentMap) {
         scene.environment = environmentMap;
     }
 
     // 调低灯光亮度，避免环境光和定向光导致模型过曝泛白，从而还原真实材质颜色
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.63 * intensityScale);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.792 * intensityScale);
     dirLight1.position.set(100, 200, 50);
     dirLight1.castShadow = true;
     scene.add(dirLight1);
 
-    const dirLight2 = new THREE.DirectionalLight(0xdbe3ff, 0.5);
+    const dirLight2 = new THREE.DirectionalLight(0xdbe3ff, 0.378 * intensityScale);
     dirLight2.position.set(-100, -200, -50);
     scene.add(dirLight2);
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.468 * intensityScale);
     hemiLight.position.set(0, 200, 0);
     scene.add(hemiLight);
 }
 
-function preprocessFBXMaterials(object, scaleFactor = 100) {
+function fixMaterialForModel(mat, modelKey) {
+    if (!mat) return;
+    if (!mat.isMeshStandardMaterial && !mat.isMeshPhysicalMaterial) return;
+
+    // 默认反射强度；戒指在当前基础上再提亮 20%
+    mat.envMapIntensity = modelKey === 'ring' ? 1.188 : 0.9;
+
+    const isMetallic = mat.metalness > 0.5 || mat.metalnessMap != null;
+
+    // 这两个模型里有金属透明材质，叠加深色背景后容易发黑
+    if ((modelKey === 'hero' || modelKey === 'necklace') && isMetallic && mat.transparent && mat.opacity < 0.95) {
+        mat.transparent = false;
+        mat.opacity = 1.0;
+        mat.depthWrite = true;
+    }
+
+    // 针对“金属底色为黑”的核心问题做定向修复
+    if ((modelKey === 'hero' || modelKey === 'necklace') && isMetallic && mat.color) {
+        const brightness = mat.color.r + mat.color.g + mat.color.b;
+        if (brightness < 0.18) {
+            mat.color.setRGB(0.72, 0.74, 0.78);
+        }
+    }
+
+    // 给金属一点粗糙度，避免变成“纯黑镜子”
+    if (isMetallic && mat.roughness < 0.2) {
+        mat.roughness = 0.22;
+    }
+
+    mat.needsUpdate = true;
+}
+
+function preprocessFBXMaterials(object, modelKey, scaleFactor = 100) {
     object.traverse((child) => {
         if (child.isMesh) {
             // 如果模型没有默认材质才添加占位
             if (!child.material) {
                 child.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
             }
-            
-            // 根据要求：降低金属质感，让物体不至于太像黑底的镜子
-            if (child.material) {
-                // 原材料往往是1.0的金属度，将其改低，让他开始接受环境光漫反射
-                child.material.metalness = 0.5; 
-                child.material.roughness = 0.4;
-                child.material.needsUpdate = true;
+
+            // 注意：某些模型是多材质数组，必须逐个材质修复
+            if (Array.isArray(child.material)) {
+                child.material.forEach((mat) => fixMaterialForModel(mat, modelKey));
+            } else if (child.material) {
+                fixMaterialForModel(child.material, modelKey);
             }
         }
     });
@@ -152,7 +183,7 @@ function preloadAssets() {
 
     // 1. 开始异步后台加载主位模型（50+ MB）
     loader.load(MAIN_HERO_GLB, (gltf) => { 
-        loadedModels.hero = preprocessFBXMaterials(gltf.scene, 150);
+        loadedModels.hero = preprocessFBXMaterials(gltf.scene, 'hero', 150);
         progText.innerText = `3D 模型就绪`;
         progBar.style.width = `100%`;
         
@@ -185,7 +216,7 @@ function lazyLoadSubModels() {
 
     configs.forEach(conf => {
         loader.load(conf.file, (gltf) => {
-            loadedModels[conf.key] = preprocessFBXMaterials(gltf.scene, conf.scale);
+            loadedModels[conf.key] = preprocessFBXMaterials(gltf.scene, conf.key, conf.scale);
             initCardCanvas(conf.key); // 此时自动替换掉骨架占位并渲染
         }, undefined, console.error);
     });
@@ -222,7 +253,7 @@ function initHero() {
     controls.update();
 
     // 模型不再立刻装填，而是先搭建光影，等后台加载完成再塞进 Scene
-    setupLighting(scene);
+    setupLighting(scene, 0.72); // 主位 glb（真的完成材质1.glb）在当前基础上再降 10%
 
     renderersMap['hero'] = { scene, camera, renderer, controls };
 
